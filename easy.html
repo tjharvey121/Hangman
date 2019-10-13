@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<script>
+    var word = "";
+    var underscores = [];
+    var choice = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+    var remainingLetters;
+    var generatedWord;
+    var newWord = [];
+    var fristTurn = true;
+    var livesLost = 0;
+    
+    function refreshScreen (firstTurn) {
+        if (firstTurn) {
+            var displayWord = underscores.join(' ');
+            var letterChoices = choice.join(' ');
+            
+            var quarter = letterChoices.slice(0, 14);
+            var half = letterChoices.slice(14,28);
+            var threeQuarters = letterChoices.slice(28,40);
+            var full = letterChoices.slice(40,52);
+            
+            document.getElementById("displayedWord").innerHTML = displayWord;
+            document.getElementById("displayLetters1").innerHTML = quarter;
+            document.getElementById("displayLetters2").innerHTML = half;
+            document.getElementById("displayLetters3").innerHTML = threeQuarters;
+            document.getElementById("displayLetters4").innerHTML = full;
+        }
+        else {
+            var guess = document.getElementById("guess").value;
+            var correct = false;
+            for (var i = 0; i < newWord.length; i++) {
+                if (guess.toLowerCase() == newWord[i]) {
+                    underscores[i] = newWord[i];
+                    remainingLetters--;
+                    correct = true;
+                }
+            }
+            if (!correct) {
+                livesLost++;
+            }
+            for (var i = 0; i < choice.length; i++) {
+                if ((guess.toUpperCase()) == choice[i]) {
+                    choice[i] = "_";
+                }
+            }
+            var displayWord = underscores.join(' ');
+            var letterChoices = choice.join(' ');
+            
+            var quarter = letterChoices.slice(0, 14);
+            var half = letterChoices.slice(14,28);
+            var threeQuarters = letterChoices.slice(28,40);
+            var full = letterChoices.slice(40,52);
+            
+            document.getElementById("displayedWord").innerHTML = displayWord;
+            document.getElementById("displayLetters1").innerHTML = quarter;
+            document.getElementById("displayLetters2").innerHTML = half;
+            document.getElementById("displayLetters3").innerHTML = threeQuarters;
+            document.getElementById("displayLetters4").innerHTML = full;
+        }
+    }
+    
+    function pageLoad () {
+        var request = new XMLHttpRequest
+
+        request.open('GET', 'https://hangman-api.lively.software?difficulty=easy');
+
+        request.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                console.log(word);
+                generatedWord = request.responseText;
+                for (var i = 9; i < generatedWord.length - 2; i++) {
+                    word += generatedWord[i];
+                }
+                for (var i = 0; i < word.length; i++) {
+                    underscores[i] = "_";
+                }
+                var counter = 0;
+                for (var i = 9; i < generatedWord.length - 2; i++) {
+                    newWord[counter] = generatedWord[i];
+                    counter++;
+                }
+                remainingLetters = word.length;
+                refreshScreen(true);
+            }
+            console.log(word);
+        }
+
+        request.send();
+        drawHangmanStart();
+        document.getElementById("guess").focus();
+        document.getElementById("Start").disabled = true;
+    }
+    
+    function validateCharacter () {
+        var guess = document.getElementById("guess").value;
+        var validated = true;
+        var validator = 0;
+        
+        var regex = /^[a-zA-Z]+$/;
+        if (guess == null) {
+            validated = false;
+            alert("You must enter a guess into the box");
+        }
+        else if (!(isNaN(guess))) {
+            validated = false;
+            alert("You must be enter a letter into the box")
+        }
+        else {
+            for (var i = 0; i < choice.length; i++) {
+                if (guess.toUpperCase() == choice[i]) {
+                    validator++;
+                    break;
+                }
+            }
+            if (validator == 0) {
+                alert("You have already guessed that letter, try again");
+                validated = false;
+            }
+        }
+        if (validated) {
+            refreshScreen(false);
+        }
+        if (remainingLetters == 0) {
+            won();
+        }
+        if (livesLost > 0) {
+            drawHangmanStart();
+        }
+        document.getElementById("guess").value = "";
+        document.getElementById("guess").focus();
+    }
+
+    function drawHangmanStart () {
+        var canvas = document.getElementById("hangman");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, 150, 100);
+        
+        switch (livesLost) {
+            case 0:
+                ctx.moveTo(50,100);
+                ctx.lineTo(50,500);
+                ctx.stroke();
+
+                ctx.moveTo(50,100);
+                ctx.lineTo(250,100);
+                ctx.stroke();
+
+                ctx.moveTo(250,100);
+                ctx.lineTo(250,150);
+                ctx.stroke();
+                break;
+            case 1:
+                ctx.beginPath();
+                ctx.arc(250, 190, 40, 0, 2 * Math.PI);
+                ctx.stroke();
+                break;
+            case 2:
+                ctx.moveTo(250,230);
+                ctx.lineTo(250,375);
+                ctx.stroke();
+                break;
+            case 3:
+                ctx.moveTo(250,375);
+                ctx.lineTo(290,450);
+                ctx.stroke();
+                break;
+            case 4:
+                ctx.moveTo(250,375);
+                ctx.lineTo(210,450);
+                ctx.stroke();    
+                break;
+            case 5:
+                ctx.moveTo(250,300);
+                ctx.lineTo(325, 240);
+                ctx.stroke();
+                break;
+            case 6:
+                ctx.moveTo(250,300);
+                ctx.lineTo(175, 240);
+                ctx.stroke();
+                lost();
+                break;
+        }
+    }
+    
+    function lost() {
+        alert("You have run out of lives \n\n The word was: " + word);
+        document.getElementById("submit").disabled = true;
+        document.getElementById("Start").disabled = true;
+        document.getElementById("guess").disabled = true;
+    }
+    function won () {
+        alert("You won the game!");
+        document.getElementById("submit").disabled = true;
+        document.getElementById("Start").disabled = true;
+        document.getElementById("guess").disabled = true;
+    }
+    function restart() {
+        location.href = "index.html";
+    }
+</script>   
+<html>
+    <head>    
+        <title>Hangman!</title>
+        <script type="text/javascript">
+            function stopRKey(evt) {
+                var evt = (evt) ? evt : ((event) ? event : null);
+                var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+                if ((evt.keyCode == 13) && (node.type=="text"))  {return false;}
+            }
+
+            document.onkeypress = stopRKey;
+        </script> 
+    </head>
+    <body>    
+        <h1>Hangman!</h1>
+        <button onclick="pageLoad()" id="Start"> Start Game </button> <br> <br> <br>
+        <div class="row">
+            <div class="column">
+                <div class="leftSide">
+                    <form>
+                        <input type="text" maxlength="1" id="guess" autocomplete="off" style="margin-left: 12em;">
+                    </form> <br> <br>
+                    <button onclick="validateCharacter()" style="margin-left: 14em;" id="submit"> Submit Guess </button> <br><br>
+                        <div id="displayedWord" style="font-size: 200%;"></div> <br><br>
+                     <div class="letters">
+                        <div id="displayLetters1" style="font-size: 200%"></div>
+                        <div id="displayLetters2" style="font-size: 200%"></div>
+                        <div id="displayLetters3" style="font-size: 200%"></div>
+                        <div id="displayLetters4" style="font-size: 200%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <canvas id="hangman" width = "400" height = "500" style="border: 1px solid #000000; margin-left: 10em;"></canvas> <br> <br>
+            </div>
+        </div>
+        <button onclick="restart()" id="End"> Restart </button>
+    </body>
+</html>
+<style>
+    #Start {
+        text-align: center;
+        margin-left: 30em;
+        margin-right: 40em;
+        padding: 15px 70px;
+        font-size: 20px;
+        background-color: limegreen;
+        color: white;
+    }
+    #End {
+        text-align: center;
+        margin-left: 30em;
+        margin-right: 40em;
+        padding: 15px 70px;
+        font-size: 20px;
+        background-color: red;
+        color: white;
+    }
+    #hangman {
+        margin-left: 50em;
+    }
+    .column {
+        float: left;
+        width: 50%;
+    }
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    #displayedWord {
+        margin-left: auto;
+        margin-right: auto;
+        width: 50%;
+    }
+    .letters {
+        margin-left: 9em;
+    }
+</style>
